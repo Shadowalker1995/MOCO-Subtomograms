@@ -25,7 +25,7 @@ import torchvision.models as models
 import Encoder3D.Model_RB3D_lincls
 import Encoder3D.Model_DSRF3D_v2_lincls
 import Custom_CryoET_DataLoader
-from CustomTransforms import ToTensor
+from CustomTransforms import ToTensor, Normalize3D
 
 import torchio as tio
 
@@ -259,10 +259,8 @@ def main_worker(gpu, ngpus_per_node, args):
     valdir = os.path.join(args.data, 'val/subtomogram_mrc')
     valdir_json = os.path.join(args.data, 'val/json_label')
 
-    train_normalize = transforms.Normalize(mean=[0.05964008],
-                                           std=[13.57436941])
-    val_normalize = transforms.Normalize(mean=[0.04725085],
-                                           std=[13.48426468])
+    train_normalize = Normalize3D(mean=[0.05964008], std=[13.57436941])
+    val_normalize = Normalize3D(mean=[0.04725085], std=[13.48426468])
     train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
         root_dir=traindir, json_dir=traindir_json,
         transform=transforms.Compose([ToTensor(), train_normalize]))

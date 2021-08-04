@@ -33,7 +33,7 @@ import torchvision.models as models
 import Encoder3D.Model_RB3D
 import Encoder3D.Model_DSRF3D_v2
 import Custom_CryoET_DataLoader
-from CustomTransforms import ToTensor
+from CustomTransforms import ToTensor, Normalize3D
 
 model_names = ['RB3D', 'DSRF3D_v2']
 
@@ -193,7 +193,7 @@ def main_worker(gpu, ngpus_per_node, args):
         cudnn.benchmark = True
         return model
 
-    args.evaluate = False
+    # args.evaluate = False
     if args.evaluate:
         if os.path.exists('./Figures/val_outputs.npy'):
             val_outputs = np.load('./Figures/val_outputs.npy')
@@ -204,8 +204,7 @@ def main_worker(gpu, ngpus_per_node, args):
             # Data loading code
             valdir = os.path.join(args.data, 'val/subtomogram_mrc')
             valdir_json = os.path.join(args.data, 'val/json_label')
-            val_normalize = transforms.Normalize(mean=[0.04725085],
-                                                 std=[13.48426468])
+            val_normalize = Normalize3D(mean=[0.04725085], std=[13.48426468])
             val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 root_dir=valdir, json_dir=valdir_json,
                 transform=transforms.Compose([ToTensor(), val_normalize]))
@@ -226,8 +225,7 @@ def main_worker(gpu, ngpus_per_node, args):
             # Data loading code
             traindir = os.path.join(args.data, 'train/subtomogram_mrc')
             traindir_json = os.path.join(args.data, 'train/json_label')
-            train_normalize = transforms.Normalize(mean=[0.05964008],
-                                                   std=[13.57436941])
+            train_normalize = Normalize3D(mean=[0.05964008], std=[13.57436941])
             train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 root_dir=traindir, json_dir=traindir_json,
                 transform=transforms.Compose([ToTensor(), train_normalize]))

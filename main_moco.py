@@ -28,7 +28,7 @@ import moco.builder
 import Encoder3D.Model_RB3D
 import Encoder3D.Model_DSRF3D_v2
 import Custom_CryoET_DataLoader
-from CustomTransforms import ToTensor, Random3DRotate
+from CustomTransforms import ToTensor, Normalize3D
 
 import torchio as tio
 
@@ -228,15 +228,17 @@ def main_worker(gpu, ngpus_per_node, args):
     # Data loading code
     traindir = os.path.join(args.data, 'train/subtomogram_mrc')
     traindir_json = os.path.join(args.data, 'train/json_label')
-    normalize = transforms.Normalize(mean=[0.05964008],
-                                     std=[13.57436941])
+    normalize = Normalize3D(mean=[0.05964008], std=[13.57436941])
     if args.aug_plus:
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709
         augmentation = [
+            tio.transforms.RandomAffine(degrees=15, scales=(0.8, 1.2), isotropic=True),
+            tio.transforms.RandomElasticDeformation(max_displacement=2),
             tio.transforms.RandomFlip(flip_probability=0.6),
-            tio.transforms.RandomGamma(log_gamma=(-0.3, 0.3), p=0.7),
-            # tio.transforms.RandomBlur(p=0.5),
-            tio.transforms.RandomAffine(degrees=45, translation=(0.1, 0.1), scales=(0.9, 1.1)),
+            # tio.transforms.RandomGamma(log_gamma=(-0.3, 0.3), p=0.7),
+            tio.transforms.RandomNoise(),
+            # tio.transforms.RandomBlur(p=0.2),
+            tio.transforms.RandomSwap(patch_size=5, num_iterations=10),
             ToTensor(),
             normalize,
             # tio.transforms.RandomSwap(num_iterations=5),
