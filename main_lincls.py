@@ -22,8 +22,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
-import Encoder3D.Model_RB3D_lincls
-import Encoder3D.Model_DSRF3D_v2_lincls
+import Encoder3D.Model_RB3D
+import Encoder3D.Model_DSRF3D_v2
 import Custom_CryoET_DataLoader
 from CustomTransforms import ToTensor, Normalize3D
 
@@ -31,7 +31,7 @@ import torchio as tio
 
 model_names = ['RB3D', 'DSRF3D_v2']
 
-Encoders3D_dictionary = {'RB3D': Encoder3D.Model_RB3D_lincls.RB3D, 'DSRF3D_v2': Encoder3D.Model_DSRF3D_v2_lincls.DSRF3D_v2}
+Encoders3D_dictionary = {'RB3D': Encoder3D.Model_RB3D.RB3D, 'DSRF3D_v2': Encoder3D.Model_DSRF3D_v2.DSRF3D_v2}
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR',

@@ -64,7 +64,7 @@ class RB3D(nn.Module):
         self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2, padding=0)
         self.bottleneck_layers = nn.Sequential(*[Bottleneck(), Bottleneck(), Bottleneck(), Bottleneck()])
         self.avgpool = nn.AdaptiveAvgPool3d((2, 2, 2))
-        # self.fc = nn.Linear(512, num_classes)
+        self.fc = nn.Linear(512, num_classes)
 
         self.dropout = nn.Dropout(p=0.5)
         self.relu = nn.ReLU()
@@ -89,6 +89,6 @@ class RB3D(nn.Module):
         x = torch.flatten(x, 1)
         # x = self.dropout(x)
         # 512 -> num_classes
-        # x = self.fc(x)
+        x = self.fc(x)
 
         return x

@@ -94,6 +94,8 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
 parser.add_argument('--pretrained', default='', type=str,
                     help='path to moco pretrained checkpoint')
 
+parser.add_argument('--moco-dim', default=128, type=int,
+                    help='feature dimension (default: 128)')
 parser.add_argument('--cos', action='store_true',
                     help='use cosine lr schedule')
 
@@ -157,7 +159,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                     world_size=args.world_size, rank=args.rank)
         # create model
         print("=> creating model '{}'".format(args.arch))
-        model = Encoders3D_dictionary[args.arch]()
+        model = Encoders3D_dictionary[args.arch](num_classes=args.moco_dim)
 
         # freeze all layers
         for name, param in model.named_parameters():
@@ -207,7 +209,9 @@ def main_worker(gpu, ngpus_per_node, args):
             val_normalize = Normalize3D(mean=[0.04725085], std=[13.48426468])
             val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 root_dir=valdir, json_dir=valdir_json,
-                transform=transforms.Compose([ToTensor(), val_normalize]))
+                transform=transforms.Compose([ToTensor(),
+                                              # val_normalize,
+                                              ]))
             val_loader = torch.utils.data.DataLoader(
                 val_dataset, batch_size=args.batch_size, shuffle=True,
                 num_workers=args.workers, pin_memory=True)
@@ -228,7 +232,9 @@ def main_worker(gpu, ngpus_per_node, args):
             train_normalize = Normalize3D(mean=[0.05964008], std=[13.57436941])
             train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 root_dir=traindir, json_dir=traindir_json,
-                transform=transforms.Compose([ToTensor(), train_normalize]))
+                transform=transforms.Compose([ToTensor(),
+                                              # train_normalize,
+                                              ]))
             train_loader = torch.utils.data.DataLoader(
                 train_dataset, batch_size=args.batch_size, shuffle=False,
                 num_workers=args.workers, pin_memory=True)

@@ -34,7 +34,7 @@ class DSRF3D_v2(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
-        # self.fc = nn.Linear(128, num_classes)
+        self.fc = nn.Linear(128, num_classes)
 
     def forward(self, x):
         # 1 x 32 x 32 x 32 -> 32 x 32 x 32 x 32
@@ -58,6 +58,6 @@ class DSRF3D_v2(nn.Module):
         # 128 x 1 x 1 x 1 -> 128
         x = torch.flatten(x, 1)
         # # 128 -> num_classes
-        # x = self.fc3(x)
+        x = self.fc(x)
 
         return x
