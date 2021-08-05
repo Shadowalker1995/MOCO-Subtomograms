@@ -1,3 +1,10 @@
+"""
+FileName:	data_config.py
+Author:	Zhu Zhan
+Email:	henry664650770@gmail.com
+Date:		2021-08-04 18:51:05
+"""
+
 # class_dict = {10: "class_1_10", 50: "class_1_50", 100: "class_1_100"}
 
 class_10 = [

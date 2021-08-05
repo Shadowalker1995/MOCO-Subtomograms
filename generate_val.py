@@ -1,10 +1,17 @@
+"""
+FileName:	generate_val.py
+Author:	Zhu Zhan
+Email:	henry664650770@gmail.com
+Date:		2021-08-04 18:51:20
+"""
+
 import os
 import shutil
 import natsort
 import random
 
 
-def foo(folder='subtomogram_mrc'):
+def random_sample(folder='subtomogram_mrc'):
     train_dir = f'./Datasets/train/{folder}'
     val_dir = f'./Datasets/val/{folder}'
     all_files = os.listdir(train_dir)
@@ -23,5 +30,5 @@ def foo(folder='subtomogram_mrc'):
 
 
 random.seed(3)
-foo(folder='subtomogram_mrc')
-foo(folder='json_label')
+random_sample(folder='subtomogram_mrc')
+random_sample(folder='json_label')

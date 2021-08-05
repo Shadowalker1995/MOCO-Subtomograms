@@ -1,5 +1,11 @@
-#!/usr/bin/env python
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+"""
+FileName:	main_cluster.py
+Author:	Zhu Zhan
+Email:	henry664650770@gmail.com
+Date:		2021-08-04 18:52:30
+"""
+
+
 import argparse
 import builtins
 import os
@@ -29,6 +35,7 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
+import torchio as tio
 
 import Encoder3D.Model_RB3D
 import Encoder3D.Model_DSRF3D_v2
@@ -49,30 +56,13 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='RB3D',
                          ' (default: RB3D)')
 parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 32)')
-parser.add_argument('--epochs', default=100, type=int, metavar='N',
-                    help='number of total epochs to run')
-parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
-                    help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=256, type=int,
                     metavar='N',
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
                          'using Data Parallel or Distributed Data Parallel')
-parser.add_argument('--lr', '--learning-rate', default=30., type=float,
-                    metavar='LR', help='initial learning rate', dest='lr')
-parser.add_argument('--schedule', default=[60, 80], nargs='*', type=int,
-                    help='learning rate schedule (when to drop lr by a ratio)')
-parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
-                    help='momentum')
-parser.add_argument('--wd', '--weight-decay', default=1e-7, type=float,
-                    metavar='W', help='weight decay (default: 0.)',
-                    dest='weight_decay')
-parser.add_argument('-p', '--print-freq', default=10, type=int,
-                    metavar='N', help='print frequency (default: 10)')
-parser.add_argument('--resume', default='', type=str, metavar='PATH',
-                    help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
-                    help='evaluate model on validation set')
+                    help='visualize on validation set')
 parser.add_argument('--world-size', default=-1, type=int,
                     help='number of nodes for distributed training')
 parser.add_argument('--rank', default=-1, type=int,
@@ -96,8 +86,6 @@ parser.add_argument('--pretrained', default='', type=str,
 
 parser.add_argument('--moco-dim', default=128, type=int,
                     help='feature dimension (default: 128)')
-parser.add_argument('--cos', action='store_true',
-                    help='use cosine lr schedule')
 
 
 def main():
@@ -196,6 +184,18 @@ def main_worker(gpu, ngpus_per_node, args):
         return model
 
     # args.evaluate = False
+    train_normalize = Normalize3D(mean=[0.05964008], std=[13.57436941])
+    custom_transforms = transforms.Compose([
+        # tio.transforms.RandomAffine(degrees=15, scales=(0.8, 1.2), isotropic=True),
+        # tio.transforms.RandomElasticDeformation(max_displacement=2),
+        # tio.transforms.RandomFlip(flip_probability=0.6),
+        # # tio.transforms.RandomGamma(log_gamma=(-0.3, 0.3), p=0.7),
+        # tio.transforms.RandomNoise(),
+        # # tio.transforms.RandomBlur(p=0.2),
+        # tio.transforms.RandomSwap(patch_size=5, num_iterations=10),
+        ToTensor(),
+        # train_normalize,
+    ])
     if args.evaluate:
         if os.path.exists('./Figures/val_outputs.npy'):
             val_outputs = np.load('./Figures/val_outputs.npy')
@@ -209,9 +209,7 @@ def main_worker(gpu, ngpus_per_node, args):
             val_normalize = Normalize3D(mean=[0.04725085], std=[13.48426468])
             val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 root_dir=valdir, json_dir=valdir_json,
-                transform=transforms.Compose([ToTensor(),
-                                              # val_normalize,
-                                              ]))
+                transform=custom_transforms)
             val_loader = torch.utils.data.DataLoader(
                 val_dataset, batch_size=args.batch_size, shuffle=True,
                 num_workers=args.workers, pin_memory=True)
@@ -229,12 +227,9 @@ def main_worker(gpu, ngpus_per_node, args):
             # Data loading code
             traindir = os.path.join(args.data, 'train/subtomogram_mrc')
             traindir_json = os.path.join(args.data, 'train/json_label')
-            train_normalize = Normalize3D(mean=[0.05964008], std=[13.57436941])
             train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 root_dir=traindir, json_dir=traindir_json,
-                transform=transforms.Compose([ToTensor(),
-                                              # train_normalize,
-                                              ]))
+                transform=custom_transforms)
             train_loader = torch.utils.data.DataLoader(
                 train_dataset, batch_size=args.batch_size, shuffle=False,
                 num_workers=args.workers, pin_memory=True)

@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+FileName:	get_mean_std.py
+Author:	Zhu Zhan
+Email:	henry664650770@gmail.com
+Date:		2021-08-04 18:51:36
+"""
+
 import os
 import numpy as np
 import torchvision.transforms as transforms
