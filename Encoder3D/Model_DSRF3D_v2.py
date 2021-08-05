@@ -30,6 +30,17 @@ class DSRF3D_v2(nn.Module):
 
         self.fc = nn.Linear(128, num_classes)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal(m.weight, 0, 0.01)
+
     def forward(self, x):
         # 1 x 32 x 32 x 32 -> 32 x 32 x 32 x 32
         x = F.relu(self.conv1(x))
@@ -55,3 +66,8 @@ class DSRF3D_v2(nn.Module):
         x = self.fc(x)
 
         return x
+
+
+if __name__ == "__main__":
+    model = DSRF3D_v2(num_classes=10)
+

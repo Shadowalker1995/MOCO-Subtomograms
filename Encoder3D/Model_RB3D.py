@@ -62,17 +62,23 @@ class RB3D(nn.Module):
         self.relu = nn.ReLU()
         # self.softmax = nn.Softmax(dim=-1)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal(m.weight, 0, 0.01)
+
     def forward(self, x):
         # 1 x 32 x 32 x 32 -> 32 x 32 x 32 x 32
         x = self.conv1(x)
         x = self.relu(x)
         # 32 x 32 x 32 x 32 -> 32 x 16 x 16 x 16
         x = self.maxpool(x)
-        # # 32 x 16 x 16 x 16 -> 64 x 16 x 16 x 16
-        # x = self.conv2(x)
-        # x = self.relu(x)
-        # # 64 x 16 x 16 x 16 -> 64 x 8 x 8 x 8
-        # x = self.maxpool(x)
         # 32 x 16 x 16 x 16 -> 32 x 16 x 16 x 16
         x = self.bottleneck_layers(x)
         # 32 x 16 x 16 x 16 -> 32 x 2 x 2 x 2
@@ -84,3 +90,7 @@ class RB3D(nn.Module):
         x = self.fc(x)
 
         return x
+
+
+if __name__ == "__main__":
+    model = RB3D(num_classes=10)

@@ -263,10 +263,16 @@ def main_worker(gpu, ngpus_per_node, args):
     val_normalize = Normalize3D(mean=[0.04725085], std=[13.48426468])
     train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
         root_dir=traindir, json_dir=traindir_json,
-        transform=transforms.Compose([ToTensor(), train_normalize]))
+        transform=transforms.Compose([
+            ToTensor(),
+            # train_normalize,
+        ]))
     val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
         root_dir=valdir, json_dir=valdir_json,
-        transform=transforms.Compose([ToTensor(), val_normalize]))
+        transform=transforms.Compose([
+            ToTensor(),
+            # val_normalize,
+        ]))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -308,7 +314,9 @@ def main_worker(gpu, ngpus_per_node, args):
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
                 'optimizer': optimizer.state_dict(),
-            }, is_best)
+            }, is_best, filename='main_lincls_checkpoint/{}_lincls_lr{}_epochs{}.pth.tar'.
+                format(args.pretrained.split('/')[-1][:-8], args.lr, args.epochs))
+
             if epoch == args.start_epoch:
                 sanity_check(model.state_dict(), args.pretrained)
 
@@ -412,7 +420,7 @@ def validate(val_loader, model, criterion, args):
 def save_checkpoint(state, is_best, filename='main_lincls_checkpoint/checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, 'main_lincls_checkpoint/model_best.pth.tar')
+        shutil.copyfile(filename, '{}_best.pth.tar'.format(filename[:-8]))
 
 
 def sanity_check(state_dict, pretrained_weights):

@@ -35,8 +35,8 @@ The visualization results and the extracted numpy features will be saved in `./F
 ### Train a linear classifier (main_lincls.py)
 
 ```sh
-python main_lincls.py -a RB3D --lr 30 --schedule 150 --batch-size 32 --workers 8 --epochs 200 --pretrained ./main_moco_checkpoint/arch-RB3D_epochs600_bs32_lr0.003_moco-k128_moco-dim128.pth.tar --dist-url "tcp://localhost:10001" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 ./Datasets/ 2>&1 | tee ./logs/arch-RB3D_epochs200_bs32_lr30_moco-k128_moco-dim256_lincls_lr300.log
+python main_lincls.py -a RB3D --lr 30 --schedule 150 --batch-size 32 --workers 8 --epochs 200 --pretrained ./main_moco_checkpoint/arch-RB3D_epochs600_bs32_lr0.003_moco-k128_moco-dim128.pth.tar --dist-url "tcp://localhost:10001" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 ./Datasets/ 2>&1 | tee ./logs/arch-RB3D_epochs600_bs32_lr0.003_moco-k128_moco-dim128_lincls_lr30.log
 
-python main_cluster.py -a DSRF3D_v2 --lr 0.003 --batch-size 32 --workers 8 --epochs 100 --moco-dim 128 --pretrained ./main_moco_checkpoint/Nonorm-DSRF3D_v2_epochs600_bs32_lr0.003_moco-k128_moco-dim128.pth.tar --dist-url "tcp://localhost:10001" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 ./Datasets/
+python main_lincls.py -a DSRF3D_v2 --lr 3 --schedule 30 60 90 --batch-size 32 --workers 8 --epochs 120 --pretrained ./main_moco_checkpoint/Nonorm-DSRF3D_v2_epochs600_bs32_lr0.003_moco-k128_moco-dim128.pth.tar --dist-url "tcp://localhost:10001" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 ./Datasets/ 2>&1 | tee ./logs/Nonorm-DSRF3D_v2_epochs600_bs32_lr0.003_moco-k128_moco-dim128_lincls_lr3_epochs120.log
 ```
 
