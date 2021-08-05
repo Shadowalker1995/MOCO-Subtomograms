@@ -44,7 +44,7 @@ class Bottleneck(nn.Module):
 
 
 class RB3D(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, keepfc=True):
         super(RB3D, self).__init__()
         # dimensions of the 3D image. Channels, Depth, Height, Width
         C = 1
@@ -56,7 +56,8 @@ class RB3D(nn.Module):
         self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2, padding=0)
         self.bottleneck_layers = nn.Sequential(*[Bottleneck(), Bottleneck(), Bottleneck(), Bottleneck()])
         self.avgpool = nn.AdaptiveAvgPool3d((2, 2, 2))
-        self.fc = nn.Linear(256, num_classes)
+        if keepfc:
+            self.fc = nn.Linear(256, num_classes)
 
         # self.dropout = nn.Dropout(p=0.5)
         self.relu = nn.ReLU()
@@ -71,7 +72,7 @@ class RB3D(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.normal(m.weight, 0, 0.01)
+                nn.init.normal_(m.weight, 0, 0.01)
 
     def forward(self, x):
         # 1 x 32 x 32 x 32 -> 32 x 32 x 32 x 32
@@ -86,11 +87,14 @@ class RB3D(nn.Module):
         # 32 x 2 x 2 x 2 -> 256
         x = torch.flatten(x, 1)
         # x = self.dropout(x)
-        # 256 -> num_classes
-        x = self.fc(x)
+        if self.keepfc:
+            # 256 -> num_classes
+            x = self.fc(x)
 
         return x
 
 
 if __name__ == "__main__":
     model = RB3D(num_classes=10)
+    print(model)
+    print(list(model.modules()))

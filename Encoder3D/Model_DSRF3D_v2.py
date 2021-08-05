@@ -11,13 +11,14 @@ import torch.nn.functional as F
 
 
 class DSRF3D_v2(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, keepfc=True):
         super(DSRF3D_v2, self).__init__()
         # dimensions of the 3D image. Channels, Depth, Height, Width
         C = 1
         D = 32
         H = 32
         W = 32
+        self.keepfc = keepfc
 
         self.conv1 = nn.Conv3d(C, 32, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv3d(32, 32, kernel_size=3, stride=1, padding=1)
@@ -28,7 +29,8 @@ class DSRF3D_v2(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
 
-        self.fc = nn.Linear(128, num_classes)
+        if keepfc:
+            self.fc = nn.Linear(128, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
@@ -39,7 +41,7 @@ class DSRF3D_v2(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.normal(m.weight, 0, 0.01)
+                nn.init.normal_(m.weight, 0, 0.01)
 
     def forward(self, x):
         # 1 x 32 x 32 x 32 -> 32 x 32 x 32 x 32
@@ -62,12 +64,14 @@ class DSRF3D_v2(nn.Module):
         x = self.avgpool(x)
         # 128 x 1 x 1 x 1 -> 128
         x = torch.flatten(x, 1)
-        # # 128 -> num_classes
-        x = self.fc(x)
+        if self.keepfc:
+            # 128 -> num_classes
+            x = self.fc(x)
 
         return x
 
 
 if __name__ == "__main__":
     model = DSRF3D_v2(num_classes=10)
-
+    print(model)
+    print(list(model.modules()))

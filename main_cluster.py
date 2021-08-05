@@ -147,7 +147,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                     world_size=args.world_size, rank=args.rank)
         # create model
         print("=> creating model '{}'".format(args.arch))
-        model = Encoders3D_dictionary[args.arch](num_classes=args.moco_dim)
+        model = Encoders3D_dictionary[args.arch](num_classes=args.moco_dim, keepfc=False)
 
         # freeze all layers
         for name, param in model.named_parameters():
@@ -200,6 +200,8 @@ def main_worker(gpu, ngpus_per_node, args):
         if os.path.exists('./Figures/val_outputs.npy'):
             val_outputs = np.load('./Figures/val_outputs.npy')
             val_targets = np.load('./Figures/val_targets.npy')
+            print("=> the shape of extracted features for val set is: ", val_outputs.shape)
+            print("=> the shape of labels for val set is: ", val_targets.shape)
             visualize(val_outputs, val_targets, 'val')
         else:
             model = model_init()
@@ -221,6 +223,8 @@ def main_worker(gpu, ngpus_per_node, args):
         if os.path.exists('./Figures/train_outputs.npy'):
             train_outputs = np.load('./Figures/train_outputs.npy')
             train_targets = np.load('./Figures/train_targets.npy')
+            print("=> the shape of extracted features for train set is: ", train_outputs.shape)
+            print("=> the shape of labels for train set is: ", train_targets.shape)
             visualize(train_outputs, train_targets, 'train')
         else:
             model = model_init()
@@ -330,9 +334,9 @@ def validate(val_loader, model, args):
             outputs.append(output)
             targets.append(target)
 
-    # (500, 256)
+    # (4500, 128)
     outputs = torch.cat(outputs, dim=0).cpu().numpy()
-    # (500,)
+    # (4500,)
     targets = torch.cat(targets, dim=0).cpu().numpy()
 
     return outputs, targets
