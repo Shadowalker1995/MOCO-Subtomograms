@@ -27,9 +27,9 @@ class MoCo(nn.Module):
         self.encoder_k = base_encoder(num_classes=dim)
 
         if mlp:  # hack: brute-force replacement
-            dim_mlp = self.encoder_q.fc3.weight.shape[1]
-            self.encoder_q.fc3 = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc3)
-            self.encoder_k.fc3 = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_k.fc3)
+            dim_mlp = self.encoder_q.fc.weight.shape[1]
+            self.encoder_q.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_q.fc)
+            self.encoder_k.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.encoder_k.fc)
 
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
             param_k.data.copy_(param_q.data)  # initialize
@@ -47,7 +47,7 @@ class MoCo(nn.Module):
         Momentum update of the key encoder
         """
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
-            param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)
+            param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)     # Equation (2)
 
     @torch.no_grad()
     def _dequeue_and_enqueue(self, keys):

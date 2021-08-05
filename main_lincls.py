@@ -58,7 +58,7 @@ parser.add_argument('--schedule', default=[60, 80], nargs='*', type=int,
                     help='learning rate schedule (when to drop lr by a ratio)')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
-parser.add_argument('--wd', '--weight-decay', default=1e-7, type=float,
+parser.add_argument('--wd', '--weight-decay', default=0, type=float,
                     metavar='W', help='weight decay (default: 0.)',
                     dest='weight_decay')
 parser.add_argument('-p', '--print-freq', default=10, type=int,
@@ -155,7 +155,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
     model = Encoders3D_dictionary[args.arch](num_classes=10)
 
-    # freeze all layers but the last fc -> which is fc
+    # freeze all layers but the last fc
     for name, param in model.named_parameters():
         if name not in ['fc.weight', 'fc.bias']:
             param.requires_grad = False
@@ -509,11 +509,11 @@ def accuracy(output, target, topk=(1,)):
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        correct = pred.eq(target.reshape(1, -1).expand_as(pred))
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
 
         res = []
         for k in topk:
-            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

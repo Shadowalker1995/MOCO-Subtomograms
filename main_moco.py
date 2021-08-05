@@ -36,7 +36,7 @@ model_names = ['RB3D', 'DSRF3D_v2']
 
 Encoders3D_dictionary = {'RB3D': Encoder3D.Model_RB3D.RB3D, 'DSRF3D_v2': Encoder3D.Model_DSRF3D_v2.DSRF3D_v2}
 
-parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+parser = argparse.ArgumentParser(description='PyTorch Subtomograms Training')
 parser.add_argument('data', metavar='DIR',
                     help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='RB3D', choices=model_names,
@@ -98,7 +98,7 @@ parser.add_argument('--mlp', action='store_true',
 parser.add_argument('--aug-plus', action='store_true',
                     help='use moco v2 data augmentation')
 parser.add_argument('--cos', action='store_true',
-                    help='use cosidistne lr schedule')
+                    help='use cosine lr schedule')
 
 
 def main():
@@ -199,11 +199,11 @@ def main_worker(gpu, ngpus_per_node, args):
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
-    # optimizer = torch.optim.SGD(model.parameters(), args.lr,
-    #                             momentum=args.momentum,
-    #                             weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
 
-    optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
+    # optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -285,8 +285,8 @@ def main_worker(gpu, ngpus_per_node, args):
         train(train_loader, model, criterion, optimizer, epoch, args)
 
         if (epoch+1) % 20 == 0 and (not args.multiprocessing_distributed or
-                                 (args.multiprocessing_distributed
-                                  and args.rank % ngpus_per_node == 0)):
+                                    (args.multiprocessing_distributed
+                                     and args.rank % ngpus_per_node == 0)):
             # save_checkpoint({
             #     'epoch': epoch + 1,
             #     'arch': args.arch,
@@ -416,11 +416,11 @@ def accuracy(output, target, topk=(1,)):
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        correct = pred.eq(target.reshape(1, -1).expand_as(pred))
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
 
         res = []
         for k in topk:
-            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
