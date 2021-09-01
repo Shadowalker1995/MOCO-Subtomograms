@@ -164,7 +164,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
     print(type(args.arch))
     model = moco.builder.MoCo(
-        Encoders3D_dictionary[args.arch](num_classes=5),
+        Encoders3D_dictionary[args.arch],
         args.moco_dim, args.moco_k, args.moco_m, args.moco_t, args.mlp)
     print(model)
 
@@ -227,7 +227,6 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     filename = '10_2000_30_01.pickle'
-    traindir_json = os.path.join(args.data, 'train/json_label')
     normalize = Normalize3D(mean=[-0.00076087], std=[0.90214654])
     if args.aug_plus:
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709

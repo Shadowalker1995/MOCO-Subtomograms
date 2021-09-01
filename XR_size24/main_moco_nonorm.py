@@ -164,7 +164,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
     print(type(args.arch))
     model = moco.builder.MoCo(
-        Encoders3D_dictionary[args.arch](num_classes=5),
+        Encoders3D_dictionary[args.arch],
         args.moco_dim, args.moco_k, args.moco_m, args.moco_t, args.mlp)
     print(model)
 
