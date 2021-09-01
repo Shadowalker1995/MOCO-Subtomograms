@@ -51,6 +51,7 @@ class RB3D(nn.Module):
         D = 32
         H = 32
         W = 32
+        self.keepfc = keepfc
 
         self.conv1 = nn.Conv3d(C, 32, kernel_size=3, stride=1, padding=1)
         self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2, padding=0)
