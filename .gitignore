@@ -138,3 +138,4 @@ tmp/
 core
 downstream.py
 output.png
+test.py
