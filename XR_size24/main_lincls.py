@@ -260,13 +260,13 @@ def main_worker(gpu, ngpus_per_node, args):
         filename, stage='train',
         transform=transforms.Compose([
             ToTensor(),
-            train_normalize,
+            # train_normalize,
         ]))
     val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
         filename, stage='val',
         transform=transforms.Compose([
             ToTensor(),
-            val_normalize,
+            # val_normalize,
         ]))
 
     if args.distributed:

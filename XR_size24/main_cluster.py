@@ -189,11 +189,11 @@ def main_worker(gpu, ngpus_per_node, args):
     val_normalize = Normalize3D(mean=[-0.00086651], std=[0.90188922])
     train_transforms = transforms.Compose([
         ToTensor(),
-        train_normalize,
+        # train_normalize,
     ])
     val_transforms = transforms.Compose([
         ToTensor(),
-        val_normalize,
+        # val_normalize,
     ])
     if args.evaluate:
         if os.path.exists('./Figures/val_outputs.npy'):

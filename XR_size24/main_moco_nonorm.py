@@ -297,8 +297,8 @@ def main_worker(gpu, ngpus_per_node, args):
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
-            }, is_best=False, filename='main_moco_checkpoint/Nonorm-{}_epochs{}_bs{}_lr{}_moco-k{}_moco-dim{}.pth.tar'.format(
-                args.arch, args.epochs, args.batch_size, args.lr, args.moco_k, args.moco_dim))
+            }, is_best=False, filename='main_moco_checkpoint/arch-{}_epochs{}_bs{}_lr{}_moco-k{}_moco-dim{}_checkpoint_{:04d}.pth.tar'.format(
+                args.arch, args.epochs, args.batch_size, args.lr, args.moco_k, args.moco_dim, epoch))
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
