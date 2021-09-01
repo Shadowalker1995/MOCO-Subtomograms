@@ -147,7 +147,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                     world_size=args.world_size, rank=args.rank)
         # create model
         print("=> creating model '{}'".format(args.arch))
-        model = Encoders3D_dictionary[args.arch](num_classes=args.moco_dim, keepfc=False)
+        model = Encoders3D_dictionary[args.arch](num_classes=args.moco_dim, keepfc=True)
 
         # freeze all layers
         for name, param in model.named_parameters():
