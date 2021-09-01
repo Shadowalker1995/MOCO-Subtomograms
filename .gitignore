@@ -129,14 +129,6 @@ dmypy.json
 .pyre/
 
 # Customized
-Datasets/
-Figures/*
-XR_size24/Figures/*
-!Figures/.gitkeep
-!XR_size24/Figures/.gitkeep
-logs/
-main_moco_checkpoint/
-main_lincls_checkpoint/
 tmp/
 core
 downstream.py
