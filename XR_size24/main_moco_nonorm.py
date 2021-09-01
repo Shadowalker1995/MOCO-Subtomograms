@@ -248,7 +248,7 @@ def main_worker(gpu, ngpus_per_node, args):
         augmentation = [
             # Random3DRotate(),
             ToTensor(),
-            transforms.RandomResizedCrop(32, scale=(0.5, 1.), ratio=(1., 1.)),
+            transforms.RandomResizedCrop(24, scale=(0.5, 1.), ratio=(1., 1.)),
             transforms.RandomAffine(degrees=45, translate=(0.1, 0.1), scale=(0.9, 1.1)),
             # ToTensor(),
             # normalize,
