@@ -135,3 +135,6 @@ logs/
 main_moco_checkpoint/
 main_lincls_checkpoint/
 tmp/
+core
+downstream.py
+output.png
