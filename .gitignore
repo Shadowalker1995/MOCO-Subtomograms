@@ -130,7 +130,10 @@ dmypy.json
 
 # Customized
 Datasets/
-Figures/
+Figures/*
+XR_size24/Figures/*
+!Figures/.gitkeep
+!XR_size24/Figures/.gitkeep
 logs/
 main_moco_checkpoint/
 main_lincls_checkpoint/
