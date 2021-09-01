@@ -206,7 +206,7 @@ def main_worker(gpu, ngpus_per_node, args):
             model = model_init()
             # Data loading code
             val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-                filename, stage='train',
+                filename, stage='val',
                 transform=val_transforms)
             val_loader = torch.utils.data.DataLoader(
                 val_dataset, batch_size=args.batch_size, shuffle=True,
@@ -226,7 +226,7 @@ def main_worker(gpu, ngpus_per_node, args):
             model = model_init()
             # Data loading code
             train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-                filename, stage='val',
+                filename, stage='train',
                 transform=train_transforms)
             train_loader = torch.utils.data.DataLoader(
                 train_dataset, batch_size=args.batch_size, shuffle=False,
