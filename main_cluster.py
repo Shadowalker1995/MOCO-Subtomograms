@@ -212,7 +212,7 @@ def main_worker(gpu, ngpus_per_node, args):
                 root_dir=valdir, json_dir=valdir_json,
                 transform=custom_transforms)
             val_loader = torch.utils.data.DataLoader(
-                val_dataset, batch_size=args.batch_size, shuffle=True,
+                val_dataset, batch_size=args.batch_size, shuffle=False,
                 num_workers=args.workers, pin_memory=True)
             val_outputs, val_targets = validate(val_loader, model, args)
             np.save('./Figures/val_outputs.npy', val_outputs, val_targets)
