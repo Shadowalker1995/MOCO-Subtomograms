@@ -25,6 +25,9 @@ The visualization results and the extracted numpy features will be saved in `./F
     
     # DSRF3D_v2
     python main_cluster.py -a DSRF3D_v2 --batch-size 32 --workers 4 --moco-dim 128 --pretrained ./main_moco_checkpoint/Nonorm-DSRF3D_v2_epochs600_bs32_lr0.00375_moco-k128_moco-dim128_checkpoint_0599.pth.tar --dist-url "tcp://localhost:10002" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 ./Datasets/
+    
+    # YOPO
+    python main_cluster.py -a YOPO --batch-size 32 --workers 4 --moco-dim 128 --pretrained ./main_moco_checkpoint/Nonorm-YOPO_epochs600_bs32_lr0.003_moco-k128_moco-dim128_checkpoint_0599.pth.tar --dist-url "tcp://localhost:10002" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 ./Datasets/
     ```
 
 - Visualizing the `val` datasets:
@@ -35,7 +38,42 @@ The visualization results and the extracted numpy features will be saved in `./F
     
     # DSRF3D_v2
     python main_cluster.py -a DSRF3D_v2 --batch-size 32 --workers 4 --moco-dim 128 --pretrained ./main_moco_checkpoint/Nonorm-DSRF3D_v2_epochs600_bs32_lr0.00375_moco-k128_moco-dim128_checkpoint_0599.pth.tar --dist-url "tcp://localhost:10002" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 --evaluate ./Datasets/
+    
+    # YOPO
+    python main_cluster.py -a YOPO --batch-size 32 --workers 4 --moco-dim 128 --pretrained ./main_moco_checkpoint/Nonorm-YOPO_epochs600_bs32_lr0.003_moco-k128_moco-dim128_checkpoint_0599.pth.tar --dist-url "tcp://localhost:10002" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 0 --evaluate ./Datasets/
     ```
+
+### Clustering
+
+**RB3D**
+
+> The R-sqared value of Train Set is:  0.9528333333333333
+>
+> Variance explained per principal component: [0.57503784 0.11737645 0.08921021 0.06309234]
+>
+> The R-sqared value of Val Set is:  0.924
+>
+> Variance explained per principal component: [0.55872804 0.13060367 0.08781484 0.06282765]
+
+**DSRF3D_v2**
+
+> The R-sqared value of Train Set is:  0.8719444444444444
+>
+> Variance explained per principal component: [0.5507828  0.0764118  0.07582378 0.05093344]
+>
+> The R-sqared value of Val Set is:  0.744
+>
+> Variance explained per principal component: [0.54113233 0.08823619 0.07055311 0.05528075]
+
+**YOPO**
+
+> The R-sqared value of Train Set is:  0.9671666666666666
+>
+> Variance explained per principal component: [0.30244002 0.19405591 0.07541253 0.03838637]
+>
+> The R-sqared value of Val Set is:  0.89
+>
+> Variance explained per principal component: [0.29684296 0.19859412 0.07659341 0.04000358]
 
 ### Label Spreading
 

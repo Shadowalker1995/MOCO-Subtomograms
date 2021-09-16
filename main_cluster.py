@@ -219,6 +219,7 @@ def main_worker(gpu, ngpus_per_node, args):
         np.save(f'./Figures/{sub_dir}/{stage}_targets.npy', targets)
     visualize(outputs, targets, stage, sub_dir)
     clustering(outputs, targets, stage, sub_dir)
+    label_spreading(outputs, targets, num_labels, stage, sub_dir)
     label_propagation(outputs, targets, num_labels, stage, sub_dir)
 
 
@@ -350,7 +351,7 @@ def clustering(outputs, targets, stage, sub_dir):
 
 
 # Semi-supervised Labeling
-def label_propagation(outputs, targets, num_labels, stage, sub_dir):
+def label_spreading(outputs, targets, num_labels, stage, sub_dir):
     def rbf_kernel_safe(X, Y=None, gamma=None):
         X, Y = sklearn.metrics.pairwise.check_pairwise_arrays(X, Y)
         if gamma is None:
@@ -364,8 +365,6 @@ def label_propagation(outputs, targets, num_labels, stage, sub_dir):
 
     RS = 42
     rng = np.random.RandomState(RS)
-    # define label propagation and train
-    # label_prop_model = LabelPropagation(kernel='rbf', tol=0.01, gamma=20)
     label_prop_model = LabelSpreading(kernel='rbf')
 
     if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
@@ -388,7 +387,47 @@ def label_propagation(outputs, targets, num_labels, stage, sub_dir):
     label_prop_model.fit(outputs_tsne, labels)
     pred = label_prop_model.predict(outputs_tsne)
     np.save(f'./Figures/{sub_dir}/{stage}_ls_pred.npy', pred)
-    print(label_prop_model.score(outputs_tsne, targets))
+    print(f'The label spreading score of {stage} is: ', label_prop_model.score(outputs_tsne, targets))
+
+
+# Semi-supervised Labeling
+def label_propagation(outputs, targets, num_labels, stage, sub_dir):
+    def rbf_kernel_safe(X, Y=None, gamma=None):
+        X, Y = sklearn.metrics.pairwise.check_pairwise_arrays(X, Y)
+        if gamma is None:
+            gamma = 1.0 / X.shape[1]
+
+        K = sklearn.metrics.pairwise.euclidean_distances(X, Y, squared=True)
+        K *= -gamma
+        K -= K.max()
+        np.exp(K, K)  # exponentiate K in-place
+        return K
+
+    RS = 42
+    rng = np.random.RandomState(RS)
+    label_prop_model = LabelPropagation(kernel='rbf', tol=0.01, gamma=20)
+
+    if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
+        outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
+    else:
+        outputs_pca50 = PCA(n_components=50).fit_transform(outputs)
+        outputs_tsne = TSNE(random_state=RS).fit_transform(outputs_pca50)
+        np.save(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy', outputs_tsne)
+
+    # outputs_tsne = outputs
+    labels = np.copy(targets)
+
+    if stage == 'train':
+        idx = [rng.choice(1800, 1800 - num_labels, replace=False) + i * 1800 for i in range(5)]
+    else:
+        idx = [rng.choice(200, 200 - num_labels, replace=False) + i * 200 for i in range(5)]
+    random_unlabeled_points = np.concatenate(idx, axis=0)
+    labels[random_unlabeled_points] = -1
+
+    label_prop_model.fit(outputs_tsne, labels)
+    pred = label_prop_model.predict(outputs_tsne)
+    np.save(f'./Figures/{sub_dir}/{stage}_lp_pred.npy', pred)
+    print(f'The label propagation score of {stage} is: ', label_prop_model.score(outputs_tsne, targets))
 
 
 if __name__ == '__main__':
