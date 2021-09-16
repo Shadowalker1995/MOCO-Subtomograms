@@ -21,11 +21,12 @@ class CryoETDatasetLoader(Dataset):
         self.transform = transform
 
         label_list = [b'1I6V', b'1QO1', b'3DY4', b'4V4A', b'5LQW']
+        # label_list = [b'1I6V', b'1QO1', b'3DY4', b'4V4A', b'5LQW', b'1A1S', b'1BXR', b'1KP8', b'1LB3', b'1VPX']
         with open(f'./Datasets/{filename}', 'rb') as pickle_file:
             dict_list = pickle.load(pickle_file, encoding='bytes')
         array_list = [np.expand_dims(dict_list[_][b'v'], 0) for _ in range(0, len(dict_list), 1)
                       if dict_list[_][b'id'] in label_list]
-        target_list = np.repeat(range(5), 2000)     # ground truth labels
+        target_list = np.repeat(range(len(label_list)), 2000)     # ground truth labels
         index_list = list(range(len(array_list)))
         index_split = split(index_list, len(label_list))
         train_index = [random.sample(i, int(2000*ratio)) for i in index_split]
