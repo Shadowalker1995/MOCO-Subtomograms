@@ -184,7 +184,7 @@ def main_worker(gpu, ngpus_per_node, args):
         return model
 
     sub_dir = os.path.basename(args.pretrained)[:-8]
-    mkdir(sub_dir)
+    mkdir(f'./Figures/{sub_dir}/')
     num_labels = 20
 
     if args.evaluate:
