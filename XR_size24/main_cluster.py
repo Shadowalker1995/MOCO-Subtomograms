@@ -17,6 +17,8 @@ import math
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from sklearn.metrics import r2_score
 import seaborn as sns
 import numpy as np
 import pandas as pd
@@ -202,6 +204,7 @@ def main_worker(gpu, ngpus_per_node, args):
             print("=> the shape of extracted features for val set is: ", val_outputs.shape)
             print("=> the shape of labels for val set is: ", val_targets.shape)
             visualize(val_outputs, val_targets, 'val')
+            clustering(val_outputs, val_targets, 'val')
         else:
             model = model_init()
             # Data loading code
@@ -209,12 +212,13 @@ def main_worker(gpu, ngpus_per_node, args):
                 filename, stage='val',
                 transform=val_transforms)
             val_loader = torch.utils.data.DataLoader(
-                val_dataset, batch_size=args.batch_size, shuffle=True,
+                val_dataset, batch_size=args.batch_size, shuffle=False,
                 num_workers=args.workers, pin_memory=True)
             val_outputs, val_targets = validate(val_loader, model, args)
             np.save('./Figures/val_outputs.npy', val_outputs, val_targets)
             np.save('./Figures/val_targets.npy', val_targets)
             visualize(val_outputs, val_targets, 'val')
+            clustering(val_outputs, val_targets, 'val')
     else:
         if os.path.exists('./Figures/train_outputs.npy'):
             train_outputs = np.load('./Figures/train_outputs.npy')
@@ -222,6 +226,7 @@ def main_worker(gpu, ngpus_per_node, args):
             print("=> the shape of extracted features for train set is: ", train_outputs.shape)
             print("=> the shape of labels for train set is: ", train_targets.shape)
             visualize(train_outputs, train_targets, 'train')
+            clustering(train_outputs, train_targets, 'train')
         else:
             model = model_init()
             # Data loading code
@@ -235,6 +240,65 @@ def main_worker(gpu, ngpus_per_node, args):
             np.save('./Figures/train_outputs.npy', train_outputs)
             np.save('./Figures/train_targets.npy', train_targets)
             visualize(train_outputs, train_targets, 'train')
+            clustering(train_outputs, train_targets, 'train')
+
+
+def validate(val_loader, model, args):
+    # switch to evaluate mode
+    model.eval()
+
+    outputs = []
+    targets = []
+
+    with torch.no_grad():
+        end = time.time()
+        for i, (images, target) in enumerate(val_loader):
+            if args.gpu is not None:
+                images = images.cuda(args.gpu, non_blocking=True)
+            target = target.cuda(args.gpu, non_blocking=True)
+
+            # compute output
+            output = model(images)
+
+            outputs.append(output)
+            targets.append(target)
+
+    # (4500, 128)
+    outputs = torch.cat(outputs, dim=0).cpu().numpy()
+    # (4500,)
+    targets = torch.cat(targets, dim=0).cpu().numpy()
+
+    return outputs, targets
+
+
+def fashion_scatter(x, colors):
+    # choose a color palette with seaborn.
+    num_classes = len(np.unique(colors))
+    palette = np.array(sns.color_palette("hls", num_classes))
+
+    # create a scatter plot.
+    f = plt.figure(figsize=(8, 8))
+    ax = plt.subplot(aspect='equal')
+    sc = ax.scatter(x[:, 0], x[:, 1], lw=0, s=40, c=palette[colors.astype(np.int)])
+    plt.xlim(-25, 25)
+    plt.ylim(-25, 25)
+    ax.axis('off')
+    ax.axis('tight')
+
+    # add the labels for each digit corresponding to the label
+    txts = []
+
+    for i in range(num_classes):
+        # Position of each label at median of data points.
+
+        xtext, ytext = np.median(x[colors == i, :], axis=0)
+        txt = ax.text(xtext, ytext, str(i), fontsize=24)
+        txt.set_path_effects([
+            PathEffects.Stroke(linewidth=5, foreground="w"),
+            PathEffects.Normal()])
+        txts.append(txt)
+
+    return f, ax, sc, txts
 
 
 # Visualization
@@ -278,62 +342,46 @@ def visualize(outputs, targets, stage):
     plt.savefig(f'./Figures/{stage}_scatter_pca.png')
 
 
-def fashion_scatter(x, colors):
-    # choose a color palette with seaborn.
-    num_classes = len(np.unique(colors))
-    palette = np.array(sns.color_palette("hls", num_classes))
+# Clustering
+def clustering(outputs, targets, stage):
+    RS = 123
+    if os.path.exists(f'./Figures/{stage}_outputs_tsne.npy'):
+        outputs_tsne = np.load(f'./Figures/{stage}_outputs_tsne.npy')
+    else:
+        outputs_pca50 = PCA(n_components=50).fit_transform(outputs)
+        outputs_tsne = TSNE(random_state=RS).faaawit_transform(outputs_pca50)
+        np.save(f'./Figures/{stage}_outputs_tsne.npy', outputs_tsne)
+    # kmeans = KMeans(n_clusters=5, random_state=0).fit(outputs_tsne)
+    pred = KMeans(n_clusters=5, random_state=0).fit_predict(outputs_tsne)
+    # Slicing to find the most frequent element, map then to the true clusters
+    if stage == 'val':
+        cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(5)}
+    elif stage == 'train':
+        cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(5)}
+    pred = np.array([cluster_map[ele] for ele in pred])
 
-    # create a scatter plot.
-    f = plt.figure(figsize=(8, 8))
-    ax = plt.subplot(aspect='equal')
-    sc = ax.scatter(x[:, 0], x[:, 1], lw=0, s=40, c=palette[colors.astype(np.int)])
-    plt.xlim(-25, 25)
-    plt.ylim(-25, 25)
-    ax.axis('off')
-    ax.axis('tight')
-
-    # add the labels for each digit corresponding to the label
-    txts = []
-
-    for i in range(num_classes):
-        # Position of each label at median of data points.
-
-        xtext, ytext = np.median(x[colors == i, :], axis=0)
-        txt = ax.text(xtext, ytext, str(i), fontsize=24)
-        txt.set_path_effects([
-            PathEffects.Stroke(linewidth=5, foreground="w"),
-            PathEffects.Normal()])
-        txts.append(txt)
-
-    return f, ax, sc, txts
+    print('The R-sqared value is: ', r2_score(targets, pred))
 
 
-def validate(val_loader, model, args):
-    # switch to evaluate mode
-    model.eval()
+# Label Propagation
+def label_propagation(outputs, targets, stage):
+    RS = 123
+    if os.path.exists(f'./Figures/{stage}_outputs_tsne.npy'):
+        outputs_tsne = np.load(f'./Figures/{stage}_outputs_tsne.npy')
+    else:
+        outputs_pca50 = PCA(n_components=50).fit_transform(outputs)
+        outputs_tsne = TSNE(random_state=RS).faaawit_transform(outputs_pca50)
+        np.save(f'./Figures/{stage}_outputs_tsne.npy', outputs_tsne)
+    # kmeans = KMeans(n_clusters=5, random_state=0).fit(outputs_tsne)
+    pred = KMeans(n_clusters=5, random_state=0).fit_predict(outputs_tsne)
+    # Slicing to find the most frequent element, map then to the true clusters
+    if stage == 'val':
+        cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(5)}
+    elif stage == 'train':
+        cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(5)}
+    pred = np.array([cluster_map[ele] for ele in pred])
 
-    outputs = []
-    targets = []
-
-    with torch.no_grad():
-        end = time.time()
-        for i, (images, target) in enumerate(val_loader):
-            if args.gpu is not None:
-                images = images.cuda(args.gpu, non_blocking=True)
-            target = target.cuda(args.gpu, non_blocking=True)
-
-            # compute output
-            output = model(images)
-
-            outputs.append(output)
-            targets.append(target)
-
-    # (4500, 128)
-    outputs = torch.cat(outputs, dim=0).cpu().numpy()
-    # (4500,)
-    targets = torch.cat(targets, dim=0).cpu().numpy()
-
-    return outputs, targets
+    print('The R-sqared value is: ', r2_score(targets, pred))
 
 
 if __name__ == '__main__':
