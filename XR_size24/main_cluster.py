@@ -15,18 +15,19 @@ import time
 import warnings
 import math
 
+import sklearn
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import r2_score
+from sklearn.semi_supervised import LabelPropagation
+from sklearn.semi_supervised import LabelSpreading
 import seaborn as sns
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib.patheffects as PathEffects
 
 import torch
-import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -186,60 +187,40 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # args.evaluate = False
     filename = '10_2000_30_01.pickle'
-    train_normalize = Normalize3D(mean=[-0.00076087], std=[0.90214654])
-    val_normalize = Normalize3D(mean=[-0.00086651], std=[0.90188922])
-    train_transforms = transforms.Compose([
-        ToTensor(),
-        # train_normalize,
-    ])
-    val_transforms = transforms.Compose([
-        ToTensor(),
-        # val_normalize,
-    ])
+    sub_dir = os.path.basename(args.pretrained)[:-8]
+    num_labels = 20
+
     if args.evaluate:
-        if os.path.exists('./Figures/val_outputs.npy'):
-            val_outputs = np.load('./Figures/val_outputs.npy')
-            val_targets = np.load('./Figures/val_targets.npy')
-            print("=> the shape of extracted features for val set is: ", val_outputs.shape)
-            print("=> the shape of labels for val set is: ", val_targets.shape)
-            visualize(val_outputs, val_targets, 'val')
-            clustering(val_outputs, val_targets, 'val')
-        else:
-            model = model_init()
-            # Data loading code
-            val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-                filename, stage='val',
-                transform=val_transforms)
-            val_loader = torch.utils.data.DataLoader(
-                val_dataset, batch_size=args.batch_size, shuffle=False,
-                num_workers=args.workers, pin_memory=True)
-            val_outputs, val_targets = validate(val_loader, model, args)
-            np.save('./Figures/val_outputs.npy', val_outputs, val_targets)
-            np.save('./Figures/val_targets.npy', val_targets)
-            visualize(val_outputs, val_targets, 'val')
-            clustering(val_outputs, val_targets, 'val')
+        stage = 'val'
+        stage_normalize = Normalize3D(mean=[-0.00086651], std=[0.90188922])
     else:
-        if os.path.exists('./Figures/train_outputs.npy'):
-            train_outputs = np.load('./Figures/train_outputs.npy')
-            train_targets = np.load('./Figures/train_targets.npy')
-            print("=> the shape of extracted features for train set is: ", train_outputs.shape)
-            print("=> the shape of labels for train set is: ", train_targets.shape)
-            visualize(train_outputs, train_targets, 'train')
-            clustering(train_outputs, train_targets, 'train')
-        else:
-            model = model_init()
-            # Data loading code
-            train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-                filename, stage='train',
-                transform=train_transforms)
-            train_loader = torch.utils.data.DataLoader(
-                train_dataset, batch_size=args.batch_size, shuffle=False,
-                num_workers=args.workers, pin_memory=True)
-            train_outputs, train_targets = validate(train_loader, model, args)
-            np.save('./Figures/train_outputs.npy', train_outputs)
-            np.save('./Figures/train_targets.npy', train_targets)
-            visualize(train_outputs, train_targets, 'train')
-            clustering(train_outputs, train_targets, 'train')
+        stage = 'train'
+        stage_normalize = Normalize3D(mean=[-0.00076087], std=[0.90214654])
+    stage_transforms = transforms.Compose([
+        ToTensor(),
+        # stage_normalize,
+    ])
+
+    if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs.npy'):
+        outputs = np.load(f'./Figures/{sub_dir}/{stage}_outputs.npy')
+        targets = np.load(f'./Figures/{sub_dir}/{stage}_targets.npy')
+        print(f"=> the shape of extracted features for {stage} set is: ", outputs.shape)
+        print(f"=> the shape of labels for {stage} set is: ", targets.shape)
+    else:
+        model = model_init()
+        # Data loading code
+        dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
+            filename, stage=stage,
+            transform=stage_transforms)
+        loader = torch.utils.data.DataLoader(
+            dataset, batch_size=args.batch_size, shuffle=False,
+            num_workers=args.workers, pin_memory=True)
+        outputs, targets = validate(loader, model, args)
+        np.save(f'./Figures/{sub_dir}/{stage}_outputs.npy', outputs)
+        np.save(f'./Figures/{sub_dir}/{stage}_targets.npy', targets)
+    visualize(outputs, targets, stage, sub_dir)
+    clustering(outputs, targets, stage, sub_dir)
+    label_propagation(outputs, targets, num_labels, stage, sub_dir)
 
 
 def validate(val_loader, model, args):
@@ -301,86 +282,107 @@ def fashion_scatter(x, colors):
 
 
 # Visualization
-def visualize(outputs, targets, stage):
+def visualize(outputs, targets, stage, sub_dir):
     sns.set(rc={'figure.figsize': (11.7, 8.27)})
     # print(len(outputs))
     # print(outputs[0].shape)
     RS = 123
 
     # pca + t-sne
-    if os.path.exists(f'./Figures/{stage}_outputs_tsne.npy'):
-        outputs_tsne = np.load(f'./Figures/{stage}_outputs_tsne.npy')
+    if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
+        outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
     else:
         outputs_pca50 = PCA(n_components=50).fit_transform(outputs)
         outputs_tsne = TSNE(random_state=RS).fit_transform(outputs_pca50)
-        np.save(f'./Figures/{stage}_outputs_tsne.npy', outputs_tsne)
+        np.save(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy', outputs_tsne)
 
     plt.figure()
     fashion_scatter(outputs_tsne, targets)
-    plt.savefig(f'./Figures/{stage}_fashion_scatter_pca+tsne.png')
+    plt.savefig(f'./Figures/{sub_dir}/{stage}_fashion_scatter_pca+tsne.png')
     plt.figure()
     sns.scatterplot(x=outputs_tsne[:, 0], y=outputs_tsne[:, 1], hue=targets, legend='full', palette='hls')
-    plt.savefig(f'./Figures/{stage}_scatter_pca+tsne.png')
+    plt.savefig(f'./Figures/{sub_dir}/{stage}_scatter_pca+tsne.png')
 
     # only pca
-    if os.path.exists(f'./Figures/{stage}_outputs_pca4.npy'):
-        outputs_pca4 = np.load(f'./Figures/{stage}_outputs_pca4.npy')
+    if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_pca4.npy'):
+        outputs_pca4 = np.load(f'./Figures/{sub_dir}/{stage}_outputs_pca4.npy')
     else:
         pca4 = PCA(n_components=4)
         outputs_pca4 = pca4.fit_transform(outputs)
-        np.save(f'./Figures/{stage}_outputs_pca4.npy', outputs_pca4)
+        np.save(f'./Figures/{sub_dir}/{stage}_outputs_pca4.npy', outputs_pca4)
         print('Variance explained per principal component: {}'.format(pca4.explained_variance_ratio_))
     # taking first and second principal component
     outputs_pca2 = outputs_pca4[:, :2]
 
     plt.figure()
     fashion_scatter(outputs_pca2, targets)
-    plt.savefig(f'./Figures/{stage}_fashion_scatter_pca.png')
+    plt.savefig(f'./Figures/{sub_dir}/{stage}_fashion_scatter_pca.png')
     plt.figure()
     sns.scatterplot(x=outputs_pca2[:, 0], y=outputs_pca2[:, 1], hue=targets, legend='full', palette='hls')
-    plt.savefig(f'./Figures/{stage}_scatter_pca.png')
+    plt.savefig(f'./Figures/{sub_dir}/{stage}_scatter_pca.png')
 
 
 # Clustering
-def clustering(outputs, targets, stage):
+def clustering(outputs, targets, stage, sub_dir):
     RS = 123
-    if os.path.exists(f'./Figures/{stage}_outputs_tsne.npy'):
-        outputs_tsne = np.load(f'./Figures/{stage}_outputs_tsne.npy')
+    if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
+        outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
     else:
         outputs_pca50 = PCA(n_components=50).fit_transform(outputs)
-        outputs_tsne = TSNE(random_state=RS).faaawit_transform(outputs_pca50)
-        np.save(f'./Figures/{stage}_outputs_tsne.npy', outputs_tsne)
+        outputs_tsne = TSNE(random_state=RS).fit_transform(outputs_pca50)
+        np.save(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy', outputs_tsne)
     # kmeans = KMeans(n_clusters=5, random_state=0).fit(outputs_tsne)
     pred = KMeans(n_clusters=5, random_state=0).fit_predict(outputs_tsne)
     # Slicing to find the most frequent element, map then to the true clusters
     if stage == 'val':
         cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(5)}
-    elif stage == 'train':
+    else:
         cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(5)}
     pred = np.array([cluster_map[ele] for ele in pred])
-
+    np.save(f'./Figures/{sub_dir}/{stage}_clustering.npy', pred)
     print('The R-sqared value is: ', r2_score(targets, pred))
 
 
-# Label Propagation
-def label_propagation(outputs, targets, stage):
-    RS = 123
-    if os.path.exists(f'./Figures/{stage}_outputs_tsne.npy'):
-        outputs_tsne = np.load(f'./Figures/{stage}_outputs_tsne.npy')
+# Semi-supervised Labeling
+def label_propagation(outputs, targets, num_labels, stage, sub_dir):
+    def rbf_kernel_safe(X, Y=None, gamma=None):
+        X, Y = sklearn.metrics.pairwise.check_pairwise_arrays(X, Y)
+        if gamma is None:
+            gamma = 1.0 / X.shape[1]
+
+        K = sklearn.metrics.pairwise.euclidean_distances(X, Y, squared=True)
+        K *= -gamma
+        K -= K.max()
+        np.exp(K, K)  # exponentiate K in-place
+        return K
+
+    RS = 42
+    rng = np.random.RandomState(RS)
+    # define label propagation and train
+    # label_prop_model = LabelPropagation(kernel='rbf', tol=0.01, gamma=20)
+    label_prop_model = LabelSpreading(kernel='rbf')
+
+    if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
+        outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
     else:
         outputs_pca50 = PCA(n_components=50).fit_transform(outputs)
-        outputs_tsne = TSNE(random_state=RS).faaawit_transform(outputs_pca50)
-        np.save(f'./Figures/{stage}_outputs_tsne.npy', outputs_tsne)
-    # kmeans = KMeans(n_clusters=5, random_state=0).fit(outputs_tsne)
-    pred = KMeans(n_clusters=5, random_state=0).fit_predict(outputs_tsne)
-    # Slicing to find the most frequent element, map then to the true clusters
-    if stage == 'val':
-        cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(5)}
-    elif stage == 'train':
-        cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(5)}
-    pred = np.array([cluster_map[ele] for ele in pred])
+        outputs_tsne = TSNE(random_state=RS).fit_transform(outputs_pca50)
+        np.save(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy', outputs_tsne)
 
-    print('The R-sqared value is: ', r2_score(targets, pred))
+    # outputs_tsne = outputs
+    labels = np.copy(targets)
+
+    if stage == 'train':
+        idx = [rng.choice(1800, 1800 - num_labels, replace=False) + i * 1800 for i in range(5)]
+    else:
+        idx = [rng.choice(200, 200 - num_labels, replace=False) + i * 200 for i in range(5)]
+    random_unlabeled_points = np.concatenate(idx, axis=0)
+    labels[random_unlabeled_points] = -1
+
+    label_prop_model.fit(outputs_tsne, labels)
+    pred = label_prop_model.predict(outputs_tsne)
+    np.save(f'./Figures/{sub_dir}/{stage}_ls_pred.npy', pred)
+    print(label_prop_model.score(outputs_tsne, targets))
 
 
 if __name__ == '__main__':
