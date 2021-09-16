@@ -19,22 +19,22 @@ import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-import torchvision.models as models
 
 import moco.loader
 import moco.builder
 
 import Encoder3D.Model_RB3D
 import Encoder3D.Model_DSRF3D_v2
+import Encoder3D.Model_YOPO
 import Custom_CryoET_DataLoader
 from CustomTransforms import ToTensor, Normalize3D
 
 import torchio as tio
 
-model_names = ['RB3D', 'DSRF3D_v2']
+model_names = ['RB3D', 'DSRF3D_v2', 'YOPO']
 
-Encoders3D_dictionary = {'RB3D': Encoder3D.Model_RB3D.RB3D, 'DSRF3D_v2': Encoder3D.Model_DSRF3D_v2.DSRF3D_v2}
+Encoders3D_dictionary = {'RB3D': Encoder3D.Model_RB3D.RB3D, 'DSRF3D_v2': Encoder3D.Model_DSRF3D_v2.DSRF3D_v2,
+                         'YOPO': Encoder3D.Model_YOPO.YOPO}
 
 parser = argparse.ArgumentParser(description='PyTorch Subtomograms Training')
 parser.add_argument('data', metavar='DIR',
