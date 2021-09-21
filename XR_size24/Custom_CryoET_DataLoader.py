@@ -67,6 +67,8 @@ class RealCryoETDataset(Dataset):
         self.arrays = h5f['dataset_1'][:]
         # 35502 x 1 x 24 x 24 x 24
         self.arrays = np.expand_dims(self.arrays.squeeze(4), 1)
+        # fake targets
+        self.targets = np.zeros(len(self.arrays), dtype=np.int)
 
         print('len of the dataset: ', len(self.arrays))
         h5f.close()
@@ -76,13 +78,14 @@ class RealCryoETDataset(Dataset):
 
     def __getitem__(self, idx):
         array = self.arrays[idx]
+        target = self.targets[idx]
 
         if self.transform is not None:
             transformed_array = self.transform(array)
         else:
             transformed_array = array
 
-        return transformed_array
+        return transformed_array, target
 
 
 class TwoCropsTransform:

@@ -9,6 +9,8 @@ python main_moco_nonorm.py -a DSRF3D_v2 --lr 0.00375 --schedule 300 400 500 --ba
 
 # YOPO
 python main_moco_nonorm.py -a YOPO --lr 0.003 --schedule 300 400 500 --batch-size 32 --moco-k 128 --moco-dim 128 --workers 2 --epochs 600 --dist-url "tcp://localhost:10001" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 3 --aug-plus ./Datasets/ 2>&1 | tee ./logs/Nonorm-YOPO_epochs600_bs32_lr0.003_moco-k128_moco-dim128.log
+
+python main_moco_nonorm.py -a YOPO --lr 0.003 --schedule 300 400 500 --batch-size 32 --moco-k 128 --moco-dim 128 --workers 2 --epochs 600 --dist-url "tcp://localhost:10001" --multiprocessing-distributed --world-size 1 --rank 0 --gpu 3 --aug-plus --real ./Datasets/ 2>&1 | tee ./logs/Nonorm-YOPO_epochs600_bs32_lr0.003_moco-k128_moco-dim128-real.log
 ```
 
 ### Visualizaiton (main_cluster.py)
