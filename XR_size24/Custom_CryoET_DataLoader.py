@@ -1,5 +1,6 @@
 # https://discuss.pytorch.org/t/how-to-load-images-without-using-imagefolder/59999/2
 # https://github.com/xulabs/projects/blob/master/autoencoder/autoencoder_util.py
+import h5py
 import numpy as np
 from torch.utils.data import Dataset
 import pickle
@@ -56,6 +57,34 @@ class CryoETDatasetLoader(Dataset):
         return transformed_array, target
 
 
+class RealCryoETDataset(Dataset):
+    def __init__(self, filename='data_INS.h5', transform=None):
+        self.filename = filename
+        self.transform = transform
+
+        h5f = h5py.File(f'./Datasets/{filename}', 'r')
+        # 35502 x 24 x 24 x 24 x 1
+        self.arrays = h5f['dataset_1'][:]
+        # 35502 x 1 x 24 x 24 x 24
+        self.arrays = np.expand_dims(self.arrays.squeeze(4), 1)
+
+        print('len of the dataset: ', len(self.arrays))
+        h5f.close()
+
+    def __len__(self):
+        return len(self.arrays)
+
+    def __getitem__(self, idx):
+        array = self.arrays[idx]
+
+        if self.transform is not None:
+            transformed_array = self.transform(array)
+        else:
+            transformed_array = array
+
+        return transformed_array
+
+
 class TwoCropsTransform:
     """Take two random crops of one image as the query and key."""
 
@@ -69,10 +98,14 @@ class TwoCropsTransform:
 
 
 if __name__ == "__main__":
-    train_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='train')
-    print(len(train_loader))
-    print(train_loader[100][0].shape)
+    # train_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='train')
+    # print(len(train_loader))
+    # print(train_loader[100][0].shape)
+    #
+    # val_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='val')
+    # print(len(val_loader))
+    # print(val_loader[100][0].shape)
 
-    val_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='val')
-    print(len(val_loader))
-    print(val_loader[100][0].shape)
+    train_loader = RealCryoETDataset(filename='data_INS.h5')
+    print(len(train_loader))
+    print(train_loader[100].shape)

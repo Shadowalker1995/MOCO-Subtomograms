@@ -100,6 +100,10 @@ parser.add_argument('--aug-plus', action='store_true',
 parser.add_argument('--cos', action='store_true',
                     help='use cosine lr schedule')
 
+# customize data
+parser.add_argument('--real', action='store_true',
+                    help='use the real CryoET data')
+
 
 def main():
     args = parser.parse_args()
@@ -226,7 +230,6 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
-    filename = '10_2000_30_01.pickle'
     normalize = Normalize3D(mean=[-0.00076087], std=[0.90214654])
     if args.aug_plus:
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709
@@ -262,9 +265,16 @@ def main_worker(gpu, ngpus_per_node, args):
             # tio.transforms.ZNormalization()
         ]
 
-    train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-        filename, stage='train',
-        transform=moco.loader.TwoCropsTransform(transforms.Compose(augmentation)))
+    if args.real:
+        filename = 'data_INS.h5'
+        train_dataset = Custom_CryoET_DataLoader.RealCryoETDataset(
+            filename,
+            transform=moco.loader.TwoCropsTransform(transforms.Compose(augmentation)))
+    else:
+        filename = '10_2000_30_01.pickle'
+        train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
+            filename, stage='train',
+            transform=moco.loader.TwoCropsTransform(transforms.Compose(augmentation)))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)

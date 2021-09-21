@@ -90,6 +90,10 @@ parser.add_argument('--pretrained', default='', type=str,
 
 parser.add_argument('--cos', action='store_true',
                     help='use cosine lr schedule')
+
+# customize data
+parser.add_argument('--real', action='store_true',
+                    help='use the real CryoET data')
 best_acc1 = 0
 
 
@@ -253,21 +257,30 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
-    filename = '10_2000_30_01.pickle'
     train_normalize = Normalize3D(mean=[-0.00076087], std=[0.90214654])
     val_normalize = Normalize3D(mean=[-0.00086651], std=[0.90188922])
-    train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-        filename, stage='train',
-        transform=transforms.Compose([
-            ToTensor(),
-            # train_normalize,
-        ]))
-    val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-        filename, stage='val',
-        transform=transforms.Compose([
-            ToTensor(),
-            # val_normalize,
-        ]))
+    if args.real:
+        filename = 'data_INS.h5'
+        train_dataset = Custom_CryoET_DataLoader.RealCryoETDataset(
+            filename,
+            transform=transforms.Compose([
+                ToTensor(),
+                # train_normalize,
+            ]))
+    else:
+        filename = '10_2000_30_01.pickle'
+        train_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
+            filename, stage='train',
+            transform=transforms.Compose([
+                ToTensor(),
+                # train_normalize,
+            ]))
+        val_dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
+            filename, stage='val',
+            transform=transforms.Compose([
+                ToTensor(),
+                # val_normalize,
+            ]))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)

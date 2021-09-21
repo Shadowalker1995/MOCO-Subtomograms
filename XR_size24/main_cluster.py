@@ -89,6 +89,10 @@ parser.add_argument('--pretrained', default='', type=str,
 parser.add_argument('--moco-dim', default=128, type=int,
                     help='feature dimension (default: 128)')
 
+# customize data
+parser.add_argument('--real', action='store_true',
+                    help='use the real CryoET data')
+
 
 def main():
     args = parser.parse_args()
@@ -186,7 +190,6 @@ def main_worker(gpu, ngpus_per_node, args):
         return model
 
     # args.evaluate = False
-    filename = '10_2000_30_01.pickle'
     sub_dir = os.path.basename(args.pretrained)[:-8]
     mkdir(f'./Figures/{sub_dir}/')
     num_labels = 20
@@ -210,9 +213,14 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         model = model_init()
         # Data loading code
-        dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
-            filename, stage=stage,
-            transform=stage_transforms)
+        if args.real:
+            filename = 'data_INS.h5'
+            dataset = Custom_CryoET_DataLoader.RealCryoETDataset(
+                filename, transform=stage_transforms)
+        else:
+            filename = '10_2000_30_01.pickle'
+            dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
+                filename, stage=stage, transform=stage_transforms)
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True)
