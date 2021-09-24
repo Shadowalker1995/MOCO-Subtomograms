@@ -72,6 +72,7 @@ class RealCryoETDataset(Dataset):
 
         print('len of the dataset: ', len(self.arrays))
         h5f.close()
+        print('closed')
 
     def __len__(self):
         return len(self.arrays)
@@ -101,14 +102,14 @@ class TwoCropsTransform:
 
 
 if __name__ == "__main__":
-    # train_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='train')
-    # print(len(train_loader))
-    # print(train_loader[100][0].shape)
+    train_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='train')
+    print(len(train_loader))
+    print(train_loader[100][0].shape)
     #
     # val_loader = CryoETDatasetLoader(filename='10_2000_30_01.pickle', stage='val')
     # print(len(val_loader))
     # print(val_loader[100][0].shape)
 
-    train_loader = RealCryoETDataset(filename='data_INS.h5')
-    print(len(train_loader))
-    print(train_loader[100].shape)
+    # train_loader = RealCryoETDataset(filename='data_INS.h5')
+    # print(len(train_loader))
+    # print(train_loader[100][0].shape)

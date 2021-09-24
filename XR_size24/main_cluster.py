@@ -20,6 +20,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import r2_score
+from sklearn.metrics import accuracy_score
 from sklearn.semi_supervised import LabelPropagation
 from sklearn.semi_supervised import LabelSpreading
 import seaborn as sns
@@ -205,6 +206,7 @@ def main_worker(gpu, ngpus_per_node, args):
         # stage_normalize,
     ])
 
+    num_classes = None
     if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs.npy'):
         outputs = np.load(f'./Figures/{sub_dir}/{stage}_outputs.npy')
         targets = np.load(f'./Figures/{sub_dir}/{stage}_targets.npy')
@@ -221,6 +223,7 @@ def main_worker(gpu, ngpus_per_node, args):
             filename = '10_2000_30_01.pickle'
             dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 filename, stage=stage, transform=stage_transforms)
+            num_classes = len(np.unique(dataset.targets))
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True)
@@ -228,7 +231,7 @@ def main_worker(gpu, ngpus_per_node, args):
         np.save(f'./Figures/{sub_dir}/{stage}_outputs.npy', outputs)
         np.save(f'./Figures/{sub_dir}/{stage}_targets.npy', targets)
     visualize(outputs, targets, stage, sub_dir)
-    clustering(outputs, targets, stage, sub_dir)
+    clustering(outputs, targets, stage, sub_dir, num_classes)
     label_spreading(outputs, targets, num_labels, stage, sub_dir)
     label_propagation(outputs, targets, num_labels, stage, sub_dir)
 
@@ -340,7 +343,7 @@ def visualize(outputs, targets, stage, sub_dir):
 
 
 # Clustering
-def clustering(outputs, targets, stage, sub_dir):
+def clustering(outputs, targets, stage, sub_dir, num_classes):
     RS = 123
     if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
         outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
@@ -349,15 +352,16 @@ def clustering(outputs, targets, stage, sub_dir):
         outputs_tsne = TSNE(random_state=RS).fit_transform(outputs_pca50)
         np.save(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy', outputs_tsne)
     # kmeans = KMeans(n_clusters=5, random_state=0).fit(outputs_tsne)
-    pred = KMeans(n_clusters=5, random_state=0).fit_predict(outputs_tsne)
+    pred = KMeans(n_clusters=num_classes, random_state=0).fit_predict(outputs_tsne)
     # Slicing to find the most frequent element, map then to the true clusters
     if stage == 'val':
-        cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(5)}
+        cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(num_classes)}
     else:
-        cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(5)}
+        cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(num_classes)}
     pred = np.array([cluster_map[ele] for ele in pred])
     np.save(f'./Figures/{sub_dir}/{stage}_clustering.npy', pred)
     print(f'The R-sqared value of {stage} is: ', r2_score(targets, pred))
+    print(f'The Accuracy of {stage} is: ', accuracy_score(targets, pred))
 
 
 # Semi-supervised Labeling

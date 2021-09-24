@@ -67,7 +67,7 @@ The visualization results and the extracted numpy features will be saved in `./F
 >
 > Variance explained per principal component: [0.54113233 0.08823619 0.07055311 0.05528075]
 
-**YOPO**
+**YOPO** (5 Classes)
 
 > The R-sqared value of Train Set is:  0.9671666666666666
 >
@@ -76,6 +76,20 @@ The visualization results and the extracted numpy features will be saved in `./F
 > The R-sqared value of Val Set is:  0.89
 >
 > Variance explained per principal component: [0.29684296 0.19859412 0.07659341 0.04000358]
+
+**YOPO** (10 Classes)
+
+> The R-sqared value of Train Set is:  -1.0286329966329966
+>
+> Variance explained per principal component: [0.8017566  0.06142639 0.03949744 0.01038518]
+>
+> The R-sqared value of val is:  -0.7601212121212122
+>
+> The Accuracy of val is:  0.3915
+>
+> Variance explained per principal component:[0.80836123 0.05891716 0.03839895 0.01042624]
+>
+> 
 
 ### Label Spreading
 
