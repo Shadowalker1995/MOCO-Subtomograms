@@ -206,7 +206,6 @@ def main_worker(gpu, ngpus_per_node, args):
         # stage_normalize,
     ])
 
-    num_classes = None
     if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs.npy'):
         outputs = np.load(f'./Figures/{sub_dir}/{stage}_outputs.npy')
         targets = np.load(f'./Figures/{sub_dir}/{stage}_targets.npy')
@@ -223,7 +222,6 @@ def main_worker(gpu, ngpus_per_node, args):
             filename = '10_2000_30_01.pickle'
             dataset = Custom_CryoET_DataLoader.CryoETDatasetLoader(
                 filename, stage=stage, transform=stage_transforms)
-            num_classes = len(np.unique(dataset.targets))
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=args.batch_size, shuffle=False,
             num_workers=args.workers, pin_memory=True)
@@ -231,7 +229,7 @@ def main_worker(gpu, ngpus_per_node, args):
         np.save(f'./Figures/{sub_dir}/{stage}_outputs.npy', outputs)
         np.save(f'./Figures/{sub_dir}/{stage}_targets.npy', targets)
     visualize(outputs, targets, stage, sub_dir)
-    clustering(outputs, targets, stage, sub_dir, num_classes)
+    clustering(outputs, targets, stage, sub_dir)
     label_spreading(outputs, targets, num_labels, stage, sub_dir)
     label_propagation(outputs, targets, num_labels, stage, sub_dir)
 
@@ -343,8 +341,9 @@ def visualize(outputs, targets, stage, sub_dir):
 
 
 # Clustering
-def clustering(outputs, targets, stage, sub_dir, num_classes):
+def clustering(outputs, targets, stage, sub_dir):
     RS = 123
+    num_classes = len(np.unique(targets))
     if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
         outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
     else:
