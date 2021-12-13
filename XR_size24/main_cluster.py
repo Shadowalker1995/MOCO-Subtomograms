@@ -193,7 +193,7 @@ def main_worker(gpu, ngpus_per_node, args):
     # args.evaluate = False
     sub_dir = os.path.basename(args.pretrained)[:-8]
     mkdir(f'./Figures/{sub_dir}/')
-    num_labels = 20
+    num_labels = 10
 
     if args.evaluate:
         stage = 'val'
@@ -229,9 +229,11 @@ def main_worker(gpu, ngpus_per_node, args):
         np.save(f'./Figures/{sub_dir}/{stage}_outputs.npy', outputs)
         np.save(f'./Figures/{sub_dir}/{stage}_targets.npy', targets)
     visualize(outputs, targets, stage, sub_dir)
-    clustering(outputs, targets, stage, sub_dir)
-    label_spreading(outputs, targets, num_labels, stage, sub_dir)
-    label_propagation(outputs, targets, num_labels, stage, sub_dir)
+    # clustering(outputs, targets, stage, sub_dir)
+    # label_spreading(outputs, targets, 20, stage, sub_dir)
+    # label_spreading(outputs, targets, 10, stage, sub_dir)
+    # label_spreading(outputs, targets, 5, stage, sub_dir)
+    # label_propagation(outputs, targets, num_labels, stage, sub_dir)
 
 
 def mkdir(path):
@@ -344,6 +346,7 @@ def visualize(outputs, targets, stage, sub_dir):
 def clustering(outputs, targets, stage, sub_dir):
     RS = 123
     num_classes = len(np.unique(targets))
+    # print('class number is: ', num_classes)
     if os.path.exists(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy'):
         outputs_tsne = np.load(f'./Figures/{sub_dir}/{stage}_outputs_tsne.npy')
     else:
@@ -355,6 +358,7 @@ def clustering(outputs, targets, stage, sub_dir):
     # Slicing to find the most frequent element, map then to the true clusters
     if stage == 'val':
         cluster_map = {np.argmax(np.bincount(pred[i * 200:(i+1) * 200])): i for i in range(num_classes)}
+        # print(cluster_map)
     else:
         cluster_map = {np.argmax(np.bincount(pred[i * 1800:(i + 1) * 1800])): i for i in range(num_classes)}
     pred = np.array([cluster_map[ele] for ele in pred])
@@ -400,7 +404,7 @@ def label_spreading(outputs, targets, num_labels, stage, sub_dir):
     label_prop_model.fit(outputs_tsne, labels)
     pred = label_prop_model.predict(outputs_tsne)
     np.save(f'./Figures/{sub_dir}/{stage}_ls_pred.npy', pred)
-    print(f'The label spreading score of {stage} is: ', label_prop_model.score(outputs_tsne, targets))
+    print(f'The label spreading score of {stage} with {num_labels} labeled samples each class is: ', label_prop_model.score(outputs_tsne, targets))
 
 
 # Semi-supervised Labeling
@@ -440,7 +444,7 @@ def label_propagation(outputs, targets, num_labels, stage, sub_dir):
     label_prop_model.fit(outputs_tsne, labels)
     pred = label_prop_model.predict(outputs_tsne)
     np.save(f'./Figures/{sub_dir}/{stage}_lp_pred.npy', pred)
-    print(f'The label propagation score of {stage} is: ', label_prop_model.score(outputs_tsne, targets))
+    print(f'The label propagation score of {stage} with {num_labels} labeled samples each class is: ', label_prop_model.score(outputs_tsne, targets))
 
 
 if __name__ == '__main__':
