@@ -67,9 +67,12 @@ class RealCryoETDataset(Dataset):
         self.arrays = h5f['dataset_1'][:]
         # 35502 x 1 x 24 x 24 x 24
         self.arrays = np.expand_dims(self.arrays.squeeze(4), 1)
-        # fake targets
-        self.targets = np.zeros(len(self.arrays), dtype=np.int)
+        # # fake targets
+        # self.targets = np.zeros(len(self.arrays), dtype=np.int)
+        # true targets
+        self.targets = h5f['targets'][:]
 
+        assert (len(self.arrays) == len(self.targets))
         print('len of the dataset: ', len(self.arrays))
         h5f.close()
         print('closed')
