@@ -1,6 +1,7 @@
 import pickle
 import h5py
 import numpy as np
+from sklearn import preprocessing
 
 file_identity_list = ['t1', 't10', 't13', 't14', 't23', 't24', 't26']
 # file_identity_list = ['t1', 't10']
@@ -28,10 +29,13 @@ for file_identity in file_identity_list:
     voxel_array_list.append(voxel_array)
     target_array_list.append(target_array)
 
+voxel_array = np.concatenate(voxel_array_list, axis=0)
+nsamples, nx, ny, nz, _ = voxel_array.shape
+voxel_array_d2 = voxel_array.reshape((nsamples, nx*ny*nz))
 # Generate the h5 file
 h5f = h5py.File('./Datasets/data_INS2.h5', 'w')
 # shape (8868, 24, 24, 24, 1), 8868 = 3268 + 800*7
-h5f.create_dataset('dataset_1', data=np.concatenate(voxel_array_list, axis=0))
+h5f.create_dataset('dataset_1', data=preprocessing.scale(voxel_array_d2).reshape(nsamples, nx, ny, nz, 1))
 # shape (8868,)
 h5f.create_dataset('target', data=np.concatenate(target_array_list, axis=0))
 h5f.close()

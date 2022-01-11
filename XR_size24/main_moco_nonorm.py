@@ -235,12 +235,12 @@ def main_worker(gpu, ngpus_per_node, args):
         # MoCo v2's aug: similar to SimCLR https://arxiv.org/abs/2002.05709
         augmentation = [
             tio.transforms.RandomAffine(degrees=15, scales=(0.8, 1.2), isotropic=True),
-            tio.transforms.RandomElasticDeformation(max_displacement=2),
+            # tio.transforms.RandomElasticDeformation(max_displacement=2),
             tio.transforms.RandomFlip(flip_probability=0.6),
             # tio.transforms.RandomGamma(log_gamma=(-0.3, 0.3), p=0.7),
             tio.transforms.RandomNoise(),
             # tio.transforms.RandomBlur(p=0.2),
-            tio.transforms.RandomSwap(patch_size=5, num_iterations=10),
+            # tio.transforms.RandomSwap(patch_size=5, num_iterations=10),
             ToTensor(),
             # normalize,
             # tio.transforms.RandomSwap(num_iterations=5),
